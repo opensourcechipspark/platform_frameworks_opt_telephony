@@ -84,6 +84,9 @@ public final class GsmCallTracker extends CallTracker {
     GSMPhone mPhone;
 
     boolean mDesiredMute = false;    // false = mute off
+    private static  int modemMode = Phone.MODEM_NORMAL_MODE; 
+	 private static  int index;
+	 private static  int imax;
 
     PhoneConstants.State mState = PhoneConstants.State.IDLE;
 
@@ -742,8 +745,25 @@ public final class GsmCallTracker extends CallTracker {
     getMute() {
         return mDesiredMute;
     }
+	
+/*package*/ void
+    setAudioMode(int mode) {   
+    	modemMode = mode;
+        mCi.setAudioMode(mode, null);
+    }
 
-
+    /*package*/ int
+    getAudioMode() {
+        return modemMode;		
+    }
+	void setAudioModeVolume(int iMaxVolume,int mode,int indext){
+		index = indext;
+		imax = iMaxVolume;
+		mCi.setAudioModeVolume(iMaxVolume,mode, indext,null);
+	}
+    void getAudioModeVolume(int mode,Message response){
+		mCi.getAudioModeVolume(mode,response);
+	}
     //***** Called from GsmCall
 
     /* package */ void

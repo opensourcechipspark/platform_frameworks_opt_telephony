@@ -174,8 +174,10 @@ public abstract class InboundSmsHandler extends StateMachine {
         mResolver = context.getContentResolver();
         mWapPush = new WapPushOverSms(context);
 
-        boolean smsCapable = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_sms_capable);
+//        boolean smsCapable = mContext.getResources().getBoolean(
+//                com.android.internal.R.bool.config_sms_capable);
+		boolean smsCapable = SystemProperties.getBoolean("ro.sms.capable", false);
+				
         mSmsReceiveDisabled = !SystemProperties.getBoolean(
                 TelephonyProperties.PROPERTY_SMS_RECEIVE, smsCapable);
 

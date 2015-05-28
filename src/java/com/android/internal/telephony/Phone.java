@@ -168,7 +168,12 @@ public interface Phone {
     public static final int CDMA_OTA_PROVISION_STATUS_OTAPA_STOPPED = 10;
     public static final int CDMA_OTA_PROVISION_STATUS_OTAPA_ABORTED = 11;
 
-
+	public static final int MODEM_HANDSET_MODE = 0;//earphone
+	public static final int MODEM_SPEAKER_MODE = 1;//speaker
+	public static final int MODEM_HOOKOFF_MODE = 2;//headset whit mic
+	public static final int MODEM_BT_MODE = 3;				// bluetooth
+	public static final int MODEM_HP_NOMIC_MODE = 4;//headset no mic
+	public static final int MODEM_NORMAL_MODE = 5; //stop call
     /**
      * Get the current ServiceState. Use
      * <code>registerForServiceStateChanged</code> to be informed of
@@ -1142,6 +1147,12 @@ public interface Phone {
      * @return true is muting, false is unmuting
      */
     boolean getMute();
+
+    void setAudioMode(int mode);
+    int getAudioMode();
+
+    void setAudioModeVolume(int iMaxVolume,int mode,int indext);
+    void getAudioModeVolume(int mode,Message response);
 
     /**
      * Enables or disables echo suppression.

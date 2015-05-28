@@ -1094,8 +1094,58 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
         send(rr);
     }
-
     @Override
+	public void
+    setAudioMode(int mode, Message response) {
+        RILRequest rr
+                = RILRequest.obtain(RIL_REQUEST_SET_AUDIO_MODE, response);
+
+        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
+                            + " " + mode);
+
+        rr.mParcel.writeInt(1);
+        rr.mParcel.writeInt(mode);
+
+        send(rr);
+    }
+	@Override
+	public void
+    getAudioMode(Message response){
+        RILRequest rr
+                = RILRequest.obtain(RIL_REQUEST_GET_AUDIO_MODE, response);
+
+        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));        
+
+        send(rr);
+    }
+	@Override
+	public void
+	setAudioModeVolume(int iMaxVolume,int mode, int indext, Message response){
+        RILRequest rr
+                = RILRequest.obtain(RIL_REQUEST_SET_AUDIO_MODE_VOLUME, response);
+
+        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
+                            + " " + mode);
+
+        rr.mParcel.writeInt(3);
+        rr.mParcel.writeInt(mode);
+	 rr.mParcel.writeInt(indext);
+	 rr.mParcel.writeInt(iMaxVolume);
+
+        send(rr);
+    }
+	@Override
+	public void
+    getAudioModeVolume(int mode,Message response){
+        RILRequest rr
+                = RILRequest.obtain(RIL_REQUEST_GET_AUDIO_MODE_VOLUME, response);
+
+        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));        
+ 	 rr.mParcel.writeInt(1);
+        rr.mParcel.writeInt(mode);
+        send(rr);
+    }  
+	@Override
     public void
     getSignalStrength (Message result) {
         RILRequest rr
@@ -2435,6 +2485,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_REQUEST_SET_INITIAL_ATTACH_APN: ret = responseVoid(p); break;
             case RIL_REQUEST_IMS_REGISTRATION_STATE: ret = responseInts(p); break;
             case RIL_REQUEST_IMS_SEND_SMS: ret =  responseSMS(p); break;
+			case RIL_REQUEST_SET_AUDIO_MODE: ret = responseInts(p); break;
+			case RIL_REQUEST_GET_AUDIO_MODE: ret = responseInts(p); break;
+			case RIL_REQUEST_SET_AUDIO_MODE_VOLUME: ret = responseInts(p); break;
+			case RIL_REQUEST_GET_AUDIO_MODE_VOLUME: ret = responseInts(p); break;
             default:
                 throw new RuntimeException("Unrecognized solicited response: " + rr.mRequest);
             //break;
@@ -3740,6 +3794,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_REQUEST_SET_INITIAL_ATTACH_APN: return "RIL_REQUEST_SET_INITIAL_ATTACH_APN";
             case RIL_REQUEST_IMS_REGISTRATION_STATE: return "RIL_REQUEST_IMS_REGISTRATION_STATE";
             case RIL_REQUEST_IMS_SEND_SMS: return "RIL_REQUEST_IMS_SEND_SMS";
+			case RIL_REQUEST_SET_AUDIO_MODE: return "RIL_REQUEST_SET_AUDIO_MODE";
+			case RIL_REQUEST_GET_AUDIO_MODE: return "RIL_REQUEST_GET_AUDIO_MODE";
+			case RIL_REQUEST_SET_AUDIO_MODE_VOLUME: return "RIL_REQUEST_SET_AUDIO_MODE_VOLUME";
+			case RIL_REQUEST_GET_AUDIO_MODE_VOLUME: return "RIL_REQUEST_GET_AUDIO_MODE_VOLUME";
             default: return "<unknown request>";
         }
     }

@@ -315,9 +315,26 @@ public class CDMAPhone extends PhoneBase {
     public boolean getMute() {
         return mCT.getMute();
     }
+	@Override
+	public void setAudioMode(int mode){
+		// mCT.setAudioMode( mode);
 
-    @Override
-    public void conference() {
+	}
+	@Override
+	public int getAudioMode(){
+		//mCT.getAudioMode(response);
+		return 0;
+	}
+	@Override
+	public void setAudioModeVolume(int iMaxVolume,int mode,int indext){
+
+	}
+	@Override
+    public void getAudioModeVolume(int mode,Message response){
+
+	}
+	@Override
+    public void conference() throws CallStateException {
         // three way calls in CDMA will be handled by feature codes
         Rlog.e(LOG_TAG, "conference: not possible in CDMA");
     }
@@ -1580,7 +1597,7 @@ public class CDMAPhone extends PhoneBase {
                 getContext().getContentResolver().insert(uri, map);
 
                 // Updates MCC MNC device configuration information
-                MccTable.updateMccMncConfiguration(mContext, operatorNumeric);
+                MccTable.updateMccMncConfiguration(mContext, operatorNumeric, false);
 
                 return true;
             } catch (SQLException e) {

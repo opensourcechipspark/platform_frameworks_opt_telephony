@@ -20,6 +20,7 @@ import com.android.internal.telephony.sip.SipPhone;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.media.AudioSystem;
 import android.os.AsyncResult;
 import android.os.Handler;
 import android.os.Message;
@@ -32,7 +33,10 @@ import android.telephony.Rlog;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
+import android.view.KeyEvent;
 
 
 /**
@@ -307,6 +311,8 @@ public final class CallManager {
             mBackgroundCalls.add(basePhone.getBackgroundCall());
             mForegroundCalls.add(basePhone.getForegroundCall());
             registerForPhoneStates(basePhone);
+	     	registerForHeadsetPlug();
+			registerForValueChanged();
             return true;
         }
         return false;
@@ -331,6 +337,8 @@ public final class CallManager {
             mBackgroundCalls.remove(basePhone.getBackgroundCall());
             mForegroundCalls.remove(basePhone.getForegroundCall());
             unregisterForPhoneStates(basePhone);
+	     	unregisterForHeadsetPlug();
+		 	unregisterForValueChanged();
             if (basePhone == mDefaultPhone) {
                 if (mPhones.isEmpty()) {
                     mDefaultPhone = null;
@@ -394,6 +402,7 @@ public final class CallManager {
 
                 if (mSpeedUpAudioForMtCall && (curAudioMode != AudioManager.MODE_IN_CALL)) {
                     audioManager.setMode(AudioManager.MODE_IN_CALL);
+						setModemMode(AudioManager.MODE_IN_CALL,audioManager);
                 }
                 break;
             case OFFHOOK:
@@ -415,12 +424,14 @@ public final class CallManager {
                     audioManager.requestAudioFocusForCall(AudioManager.STREAM_VOICE_CALL,
                             AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
                     audioManager.setMode(newAudioMode);
+			setModemMode(newAudioMode,audioManager);
                 }
                 mSpeedUpAudioForMtCall = false;
                 break;
             case IDLE:
                 if (audioManager.getMode() != AudioManager.MODE_NORMAL) {
                     audioManager.setMode(AudioManager.MODE_NORMAL);
+						setModemMode(AudioManager.MODE_NORMAL,audioManager);
                     if (VDBG) Rlog.d(LOG_TAG, "abandonAudioFocus");
                     // abandon audio focus after the mode has been set back to normal
                     audioManager.abandonAudioFocusForCall();
@@ -429,7 +440,173 @@ public final class CallManager {
                 break;
         }
     }
+	 
+  public void handleKeyUp(KeyEvent event, int stream) {
+ 	Rlog.d(LOG_TAG,"<--WLQ-->handleKeyUp");
+    int keyCode = event.getKeyCode();
+    switch (keyCode) {
+        case KeyEvent.KEYCODE_VOLUME_UP:
+        case KeyEvent.KEYCODE_VOLUME_DOWN:
+            /*
+             * Adjust the volume in on key down since it is more
+             * responsive to the user.
+             */
+            if (!hasActiveFgCall()) {
+        			return;
+    			}
+			Phone mphone = getActiveFgCall().getPhone();
+			setModemAudioModeValue(mphone.getAudioMode(),stream,mphone);
+		break;
+              	
+     }
+  }
+	private void setModemAudioMode(int mode){
+		Rlog.d(LOG_TAG,"<--WLQ-->setModemAudioMode mode="+mode);
+		//if (!hasActiveFgCall()) {
+		//		Rlog.e(LOG_TAG,"<--WLQ-->setModemAudioMode no fg call");
+        //    return;
+        //}
+       	
+		Phone mphone = getDefaultPhone();//getActiveFgCall().getPhone();
+		if(mphone.getAudioMode() == mode) return;
+		mphone.setAudioMode(mode);
+		//todo
+		if(mode != Phone.MODEM_NORMAL_MODE){
+			setModemAudioModeValue(mode,AudioManager.STREAM_VOICE_CALL,mphone);
+		}
+		
+	}
+	public void onValueChanged(int streamType, int index){
+		Rlog.d(LOG_TAG,"<--WLQ-->onSeekBarValueChanged streamType="+streamType);
+		Phone mphone = getDefaultPhone();//getActiveFgCall().getPhone();
+		int mode = mphone.getAudioMode();
+		if(mode == Phone.MODEM_NORMAL_MODE) return;
+		AudioManager audioManager = (AudioManager)
+                getContext().getSystemService(Context.AUDIO_SERVICE);
+		int iMaxVolume = audioManager.getStreamMaxVolume(streamType);		
+		mphone.setAudioModeVolume(iMaxVolume,mode,index);		
+	}
+	private void setModemAudioModeValue(int mode,int streamType,Phone mphone){
+		Rlog.d(LOG_TAG,"<--WLQ-->setModemAudioModeValue mode="+mode+",streamType="+streamType);
+		AudioManager audioManager = (AudioManager)
+                getContext().getSystemService(Context.AUDIO_SERVICE);
+		int iMaxVolume = audioManager.getStreamMaxVolume(streamType);
+		int index = audioManager.getStreamVolume(streamType);
+		mphone.setAudioModeVolume(iMaxVolume,mode,index);
+		Rlog.d(LOG_TAG,"<--WLQ-->setModemAudioModeValue index="+index+",iMaxVolume="+iMaxVolume);
+	}
+	public void setSpeakerOn(boolean on){
+		Rlog.d(LOG_TAG,"<--WLQ-->setSpeakerOn "+on);
+		Context context = getContext();
+       if (context == null) return;
+		if (!hasActiveFgCall()) {
+            return;
+        }
+		Phone mphone = getActiveFgCall().getPhone();
+       AudioManager audioManager = (AudioManager)
+                context.getSystemService(Context.AUDIO_SERVICE);
 
+		if(on){
+			setModemAudioMode(Phone.MODEM_SPEAKER_MODE);
+		}else{
+			boolean isHeadsetOn = audioManager.isWiredHeadsetOn();		
+			boolean isBTOn = audioManager.isBluetoothScoOn();
+			if(isBTOn){
+				setModemAudioMode(Phone.MODEM_BT_MODE);
+			}else{
+				if(isHeadsetOn){
+					setWiredHeadset(true,mphone,audioManager);
+				}else{
+					setModemAudioMode(Phone.MODEM_HANDSET_MODE);	
+				}
+			}
+
+		}
+	}
+	public void setBluetoothOn(boolean on){
+		Rlog.d(LOG_TAG,"<--WLQ-->setBluetoothOn "+on);
+		Context context = getContext();
+       if (context == null) return;
+		if (!hasActiveFgCall()) {
+            return;
+        }
+	Phone mphone = getActiveFgCall().getPhone();
+   	AudioManager audioManager = (AudioManager)
+            	context.getSystemService(Context.AUDIO_SERVICE);
+
+	if(on){
+		setModemAudioMode(Phone.MODEM_BT_MODE);
+	}else{
+		boolean isHeadsetOn = audioManager.isWiredHeadsetOn();
+		boolean isSpkOn = audioManager.isSpeakerphoneOn();
+		if(isHeadsetOn){
+			setWiredHeadset(isHeadsetOn,mphone,audioManager);
+		}else{
+			if(isSpkOn){
+				setModemAudioMode(Phone.MODEM_SPEAKER_MODE);
+			}else{
+				setModemAudioMode(Phone.MODEM_HANDSET_MODE);
+			}
+		}
+	}
+	}
+    private void setModemMode(int mode,AudioManager audioManager){
+		Phone mphone;
+		Rlog.d(LOG_TAG,"<--WLQ-->setModemMode mode"+mode);
+		//if (!hasActiveFgCall()) {
+		//	Rlog.d(LOG_TAG,"<--WLQ-->setModemMode no fg call");
+      //      return;
+      //  }
+		mphone = getDefaultPhone();
+		switch(mode){
+			case AudioManager.MODE_IN_CALL:
+				boolean isHeadsetOn = audioManager.isWiredHeadsetOn();		
+				boolean isBTOn = audioManager.isBluetoothScoOn();
+				Rlog.d(LOG_TAG,"<--WLQ-->setModemMode isHeadsetOn="+isHeadsetOn+",isBTOn="+isBTOn);
+				if(isBTOn){
+					setModemAudioMode(Phone.MODEM_BT_MODE);
+				}else{
+					if(isHeadsetOn){
+						setWiredHeadset(true,mphone,audioManager);
+					}else{
+						setModemAudioMode(Phone.MODEM_HANDSET_MODE);	
+					}
+				}
+				break;
+			case AudioManager.MODE_NORMAL:
+				setModemAudioMode(Phone.MODEM_NORMAL_MODE);
+				break;
+			default:
+				break;
+		}
+			
+	}
+	private void setWiredHeadset(boolean on,Phone mphone,AudioManager audioManager){
+		Rlog.d(LOG_TAG,"<--WLQ-->setWiredHeadset "+on);
+		if(mphone == null) return;
+ 		if(on){
+			if(AudioSystem.getDeviceConnectionState(AudioManager.DEVICE_OUT_WIRED_HEADSET,"")
+                	== AudioSystem.DEVICE_STATE_UNAVAILABLE){
+				setModemAudioMode(Phone.MODEM_HP_NOMIC_MODE);
+			}else{				
+				setModemAudioMode(Phone.MODEM_HOOKOFF_MODE);
+			}
+		}else{				
+			boolean isBTOn = audioManager.isBluetoothScoOn();
+			boolean isSpkOn = audioManager.isSpeakerphoneOn();
+			if(isBTOn){
+				setModemAudioMode(Phone.MODEM_BT_MODE);
+			}else{
+				if(isSpkOn){
+					setModemAudioMode(Phone.MODEM_SPEAKER_MODE);
+				}else{
+					setModemAudioMode(Phone.MODEM_HANDSET_MODE);
+				}
+			}
+		}
+		
+		
+	}
     private Context getContext() {
         Phone defaultPhone = getDefaultPhone();
         return ((defaultPhone == null) ? null : defaultPhone.getContext());
@@ -501,6 +678,67 @@ public final class CallManager {
         }
     }
 
+	private final BroadcastReceiver mValueChangedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals("android.intent.action.VALUE_CHANGED")) {
+			int streamType = intent.getIntExtra("streamType", 0);
+			int index = intent.getIntExtra("index", 0);
+			Rlog.d(LOG_TAG,"<--mValueChangedReceiver-->  streamType="+streamType+",index="+index);
+			if (!hasActiveFgCall()) {				
+            	return;
+        	}
+			onValueChanged(streamType,index);
+			
+       }  			
+       }
+    };
+	 private void registerForValueChanged(){
+	 	Context context = getContext();
+		IntentFilter intentFilter = new IntentFilter();  
+        	intentFilter.addAction("android.intent.action.VALUE_CHANGED");
+		context.registerReceiver(mValueChangedReceiver, intentFilter);
+	 }
+	 private void unregisterForValueChanged(){
+	 	Context context = getContext();
+		context.unregisterReceiver(mValueChangedReceiver);
+	 }
+	
+	 private final BroadcastReceiver mStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
+			Rlog.d(LOG_TAG,"<--mStateReceiver-->  state="+intent.getIntExtra("state", 0)+",microphone="+intent.getIntExtra("microphone", 0));
+			if (!hasActiveFgCall()) {				
+            	return;
+        	}			
+			Context context1 = getContext();
+        	AudioManager audioManager = (AudioManager)
+								context1.getSystemService(Context.AUDIO_SERVICE);
+			
+			if(audioManager.isBluetoothScoOn()){
+				return;
+			}
+			if (intent.getIntExtra("state", 0) == 0){				
+             	setWiredHeadset(false,getFgPhone(),audioManager);
+        	}else if (intent.getIntExtra("state", 0) == 1){  
+             setWiredHeadset(true,getFgPhone(),audioManager);
+			}                   		
+       }  			
+       }
+    };
+	 private void registerForHeadsetPlug(){
+	 	Context context = getContext();
+		IntentFilter intentFilter = new IntentFilter();  
+        	intentFilter.addAction(Intent.ACTION_HEADSET_PLUG);
+		context.registerReceiver(mStateReceiver, intentFilter);
+	 }
+	 private void unregisterForHeadsetPlug(){
+	 	Context context = getContext();
+		context.unregisterReceiver(mStateReceiver);
+	 }
+	 
+	 
     /**
      * Answers a ringing or waiting call.
      *
@@ -816,10 +1054,14 @@ public final class CallManager {
     private boolean canDial(Phone phone) {
         int serviceState = phone.getServiceState().getState();
         boolean hasRingingCall = hasActiveRingingCall();
+        boolean hasActiveCall = hasActiveFgCall();
+        boolean hasHoldingCall = hasActiveBgCall();
+        boolean allLinesTaken = hasActiveCall && hasHoldingCall;
         Call.State fgCallState = getActiveFgCallState();
 
         boolean result = (serviceState != ServiceState.STATE_POWER_OFF
                 && !hasRingingCall
+                && !allLinesTaken
                 && ((fgCallState == Call.State.ACTIVE)
                     || (fgCallState == Call.State.IDLE)
                     || (fgCallState == Call.State.DISCONNECTED)));
@@ -827,6 +1069,9 @@ public final class CallManager {
         if (result == false) {
             Rlog.d(LOG_TAG, "canDial serviceState=" + serviceState
                             + " hasRingingCall=" + hasRingingCall
+                            + " hasActiveCall=" + hasActiveCall
+                            + " hasHoldingCall=" + hasHoldingCall
+                            + " allLinesTaken=" + allLinesTaken
                             + " fgCallState=" + fgCallState);
         }
         return result;

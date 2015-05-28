@@ -602,6 +602,20 @@ public class SipPhone extends SipPhoneBase {
             if (SC_DBG) log("getMute: ret=" + ret);
             return ret;
         }
+			void setAudioMode(int mode){
+		// mCT.setAudioMode( mode);
+
+	}
+	int getAudioMode(){
+		//mCT.getAudioMode(response);
+		return 0;
+	}
+	void setAudioModeVolume(int iMaxVolume,int mode,int indext){
+
+	}
+    void getAudioModeVolume(int mode,Message response){
+
+	}
 
         void merge(SipCall that) throws CallStateException {
             if (SC_DBG) log("merge:");

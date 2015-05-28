@@ -121,7 +121,7 @@ public class GSMPhone extends PhoneBase {
     private String mImei;
     private String mImeiSv;
     private String mVmNumber;
-
+	private int mAudioMode = MODEM_NORMAL_MODE;
     // Create Cfu (Call forward unconditional) so that dialling number &
     // mOnComplete (Message object passed by client) can be packed &
     // given as a single Cfu object as user data to RIL.
@@ -1108,8 +1108,27 @@ public class GSMPhone extends PhoneBase {
     public boolean getMute() {
         return mCT.getMute();
     }
-
-    @Override
+	@Override
+    public void setAudioMode(int mode){
+		 mCT.setAudioMode( mode);
+		 mAudioMode = mode;
+		Rlog.d(LOG_TAG,"<---setAudioMode--->="+mode);
+	}
+	@Override
+	public int getAudioMode(){
+		//return mCT.getAudioMode();
+		Rlog.d(LOG_TAG,"<---getAudioMode--->="+mAudioMode);
+		return mAudioMode;
+	}
+	@Override
+	public void setAudioModeVolume(int iMaxVolume,int mode,int indext){
+		mCT.setAudioModeVolume(iMaxVolume,mode, indext);
+	}
+	@Override
+    public void getAudioModeVolume(int mode,Message response){
+		mCT.getAudioModeVolume(mode,response);
+	}
+	@Override
     public void getDataCallList(Message response) {
         mCi.getDataCallList(response);
     }

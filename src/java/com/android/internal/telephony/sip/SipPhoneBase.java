@@ -68,8 +68,24 @@ abstract class SipPhoneBase extends PhoneBase {
 
     @Override
     public abstract Call getRingingCall();
+	@Override
+	public void setAudioMode(int mode){
 
-    @Override
+	}
+	@Override
+    public int getAudioMode(){
+
+	return 0;
+	}
+	@Override
+	public void setAudioModeVolume(int iMaxVolume,int mode,int indext){
+
+	}
+	@Override
+    public void getAudioModeVolume(int mode,Message response){
+
+    	}
+	@Override
     public Connection dial(String dialString, UUSInfo uusInfo)
             throws CallStateException {
         // ignore UUSInfo

@@ -178,8 +178,23 @@ class SipCommandInterface extends BaseCommands implements CommandsInterface {
     @Override
     public void getMute (Message response) {
     }
+	@Override
+	public void setAudioMode (int mode, Message response){
 
-    @Override
+	}
+	@Override
+	public void getAudioMode(Message response){
+
+	}
+	@Override
+	public void setAudioModeVolume(int iMaxVolume,int mode,int indext, Message response){
+
+	}
+	@Override
+    public void getAudioModeVolume(int mode,Message response){
+
+	}
+	@Override
     public void getSignalStrength (Message result) {
     }
 

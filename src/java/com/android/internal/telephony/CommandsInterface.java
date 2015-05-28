@@ -951,6 +951,10 @@ public interface CommandsInterface {
 
     void getMute (Message response);
 
+	void setAudioMode (int mode, Message response);
+	void getAudioMode(Message response);
+	void setAudioModeVolume(int iMaxVolume,int mode,int indext,Message response);
+    void getAudioModeVolume(int mode,Message response);
     /**
      * response.obj is an AsyncResult
      * response.obj.result is an int[2]

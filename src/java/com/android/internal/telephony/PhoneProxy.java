@@ -812,8 +812,24 @@ public class PhoneProxy extends Handler implements Phone {
     public boolean getMute() {
         return mActivePhone.getMute();
     }
+	 @Override
+     public void setAudioMode(int mode){
+		 mActivePhone.setAudioMode( mode);
 
-    @Override
+	}
+	@Override
+	public int getAudioMode(){
+		return mActivePhone.getAudioMode();
+	}
+	@Override
+	public void setAudioModeVolume(int iMaxVolume,int mode,int indext){
+		mActivePhone.setAudioModeVolume(iMaxVolume,mode, indext);
+	}
+	@Override
+  	public void getAudioModeVolume(int mode,Message response){
+		mActivePhone.getAudioModeVolume(mode,response);
+	}
+	@Override
     public void setEchoSuppressionEnabled(boolean enabled) {
         mActivePhone.setEchoSuppressionEnabled(enabled);
     }

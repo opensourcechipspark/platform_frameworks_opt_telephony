@@ -787,7 +787,22 @@ public final class SimulatedCommands extends BaseCommands
 
     @Override
     public void getMute (Message result) {unimplemented(result);}
+	@Override
+	public void setAudioMode (int mode, Message response){
 
+	}
+	@Override
+	public void getAudioMode(Message response){
+
+	}
+	@Override
+	public void setAudioModeVolume(int iMaxVolume,int mode,int indext, Message response){
+
+	}
+	@Override
+   	 public void getAudioModeVolume(int mode,Message response){
+
+	}
     /**
      * response.obj is an AsyncResult
      * response.obj.result is an int[2]

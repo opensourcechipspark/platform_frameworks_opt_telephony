@@ -123,6 +123,7 @@ public class IccCardProxy extends Handler implements IccCard {
             //Cleanup icc references
             mUiccController.unregisterForIccChanged(this);
             mUiccController = null;
+            mExternalState = State.UNKNOWN;
             mCi.unregisterForOn(this);
             mCi.unregisterForOffOrNotAvailable(this);
             mCdmaSSM.dispose(this);
@@ -203,6 +204,9 @@ public class IccCardProxy extends Handler implements IccCard {
         switch (msg.what) {
             case EVENT_RADIO_OFF_OR_UNAVAILABLE:
                 mRadioOn = false;
+                if (CommandsInterface.RadioState.RADIO_UNAVAILABLE == mCi.getRadioState()) {
+                                        setExternalState(State.NOT_READY);
+                                    }
                 break;
             case EVENT_RADIO_ON:
                 mRadioOn = true;

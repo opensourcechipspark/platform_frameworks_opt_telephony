@@ -79,7 +79,8 @@ public class UiccController extends Handler {
 
     private static final int EVENT_ICC_STATUS_CHANGED = 1;
     private static final int EVENT_GET_ICC_STATUS_DONE = 2;
-
+    private static final int EVENT_RADIO_UNAVAILABLE = 3;
+    
     private static final Object mLock = new Object();
     private static UiccController mInstance;
 
@@ -181,6 +182,12 @@ public class UiccController extends Handler {
                     AsyncResult ar = (AsyncResult)msg.obj;
                     onGetIccCardStatusDone(ar);
                     break;
+                   case EVENT_RADIO_UNAVAILABLE:
+                                           if (mUiccCard != null) {
+                                                           mUiccCard.dispose();
+                                                           mUiccCard = null;
+                                                       }
+                                               break;
                 default:
                     Rlog.e(LOG_TAG, " Unknown Event " + msg.what);
             }
@@ -192,6 +199,7 @@ public class UiccController extends Handler {
         mContext = c;
         mCi = ci;
         mCi.registerForIccStatusChanged(this, EVENT_ICC_STATUS_CHANGED, null);
+        mCi.registerForNotAvailable(this, EVENT_RADIO_UNAVAILABLE, null);
         // TODO remove this once modem correctly notifies the unsols
         mCi.registerForOn(this, EVENT_ICC_STATUS_CHANGED, null);
     }

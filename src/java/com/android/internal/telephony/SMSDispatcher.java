@@ -184,8 +184,9 @@ public abstract class SMSDispatcher extends Handler {
         mContext.getContentResolver().registerContentObserver(Settings.Global.getUriFor(
                 Settings.Global.SMS_SHORT_CODE_RULE), false, mSettingsObserver);
 
-        mSmsCapable = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_sms_capable);
+//        mSmsCapable = mContext.getResources().getBoolean(
+//                com.android.internal.R.bool.config_sms_capable);
+		mSmsCapable = SystemProperties.getBoolean("ro.sms.capable", false);
         mSmsSendDisabled = !SystemProperties.getBoolean(
                                 TelephonyProperties.PROPERTY_SMS_SEND, mSmsCapable);
         Rlog.d(TAG, "SMSDispatcher: ctor mSmsCapable=" + mSmsCapable + " format=" + getFormat()
